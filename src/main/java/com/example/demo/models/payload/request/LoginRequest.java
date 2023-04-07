@@ -1,7 +1,5 @@
 package com.example.demo.models.payload.request;
 
-
-
 import lombok.*;
 
 import javax.validation.constraints.NotBlank;
