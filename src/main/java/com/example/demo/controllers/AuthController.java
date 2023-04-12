@@ -18,9 +18,7 @@ public class AuthController {
     public UserLoginDto authentication() throws Exception {
         User user = userService.authenticate();
         if(user.getUsername() != null && user.getPassword() != null){
-            UserLoginDto userLoginDto =
-                    new UserLoginDto(user.getId(),user.getUsername(), user.getPassword());
-            return userLoginDto;
+            return new UserLoginDto(user.getId(),user.getUsername(), user.getPassword());
         } else {
             throw new RuntimeException("User invalid credentials");
         }

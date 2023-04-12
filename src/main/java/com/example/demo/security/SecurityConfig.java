@@ -9,36 +9,42 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 
-    @EnableWebSecurity
-    public class SecurityConfig {
+@EnableWebSecurity
+public class SecurityConfig {
 
 
-        private static final String[] WHITE_LIST_URLS = { "/register", "/user/{userId}/update", "/user/{userId}/delete",
-                "/users", "/user/{username}", "/save-order", "/update-order/{orderId}", "/delete-order/{orderId}", "/orders", "/get-order/{orderId}", "/api/carts/{cartId}/clear"
-        };
-
-        @Bean
-        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-            http
-                    .cors()
-                    .and()
-                    .csrf()
-                    .disable()
-                    .authorizeRequests()
-                    .antMatchers(WHITE_LIST_URLS)
-                    .permitAll().anyRequest().
-                    authenticated()
-                    .and()
-                    .httpBasic(Customizer.withDefaults());
-            return http.build();
-        }
+    private static final String[] WHITE_LIST_URLS = {
+            "/register", "/user/{userId}/update", "/user/{userId}/delete",
+            "/users", "/user/{username}", "/save-order", "/update-order/{orderId}", "/delete-order/{orderId}", "/orders", "/get-order/{orderId}", "/api/carts/{cartId}/clear",
+            "/h2-console/**", "/h2/**"
+    };
 
 
-        @Bean
-        public PasswordEncoder encoder() {
-            return new BCryptPasswordEncoder();
-        }
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .cors().and().csrf().disable()
+                .authorizeRequests(authorizeRequests ->
+                        authorizeRequests
+                                .antMatchers(WHITE_LIST_URLS)
+                                .permitAll()
+                                .anyRequest()
+                                .authenticated()
+                )
+                .httpBasic(Customizer.withDefaults());
+
+        // This is required to allow H2 console access with Spring Security
+        http.headers().frameOptions().disable();
+
+        return http.build();
     }
+
+
+    @Bean
+    public PasswordEncoder encoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
 
 
 
