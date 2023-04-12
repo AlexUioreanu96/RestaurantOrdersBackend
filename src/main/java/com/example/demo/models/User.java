@@ -10,40 +10,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "users",
-        uniqueConstraints = {
-                @UniqueConstraint(columnNames = "username"),
-                @UniqueConstraint(columnNames = "email")
-        })
+@Table(name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @Getter
 @Setter
-@EqualsAndHashCode
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    @Size(max = 20)
     private String username;
 
-    @NotBlank
-    @Size(max = 50)
     private String email;
 
-    @NotBlank
-    @Size(max = 120)
     private String password;
 
-    @OneToMany(mappedBy = "user1", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Order> orders = new ArrayList<>();
 
-    public void removeOrder(Order order) {
-        orders.remove(order);
-    }
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonIgnore
+    private Cart cart;
 
 }

@@ -2,49 +2,73 @@ package com.example.demo.services;
 
 
 
-import com.example.demo.models.Order;
-import com.example.demo.models.User;
+import com.example.demo.models.*;
 import com.example.demo.repository.OrderRepository;
-import com.example.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class OrdersService {
 
     @Autowired
     private OrderRepository orderRepository;
+
     @Autowired
-    private UserRepository userRepository;
+    private ProductService productService;
 
-    public void prepopulateOrdersForCurrentUser(User user) {
-        if (userRepository.findById(user.getId()).isPresent()) {
-            User user1 = userRepository.findById(user.getId()).get();
+    @Autowired
+    private UserAuthenticationService userAuthenticationService;
 
-            // Create some sample orders for the current user
-            List<Order> orders = new ArrayList<>();
-            Order order1 = Order.builder().user1(user1).description("French fries with eqqs cost:10$").build();
-            Order order2 = Order.builder().user1(user1).description("Spaghetti with meat cost:20$").build();
-            Order order3 = Order.builder().user1(user1).description("Argentinean Beef with fries cost:100$").build();
-
-            orders.add(order1);
-            orders.add(order2);
-            orders.add(order3);
-            user.setOrders(orders);
-
-            userRepository.save(user);
+    public Order saveOrder(Order order) throws Exception {
+        User loggedInUser = userAuthenticationService.getLoggedInUser();
+        if (loggedInUser == null) {
+            throw new Exception("User cannot be null");
         }
+        order.setUser(loggedInUser);
+        order.setOrderStatus(OrderStatus.PENDING);
+        order.setStreetName(order.getStreetName());
+        order.setStreetNumber(order.getStreetNumber());
+
+        int totalPrice = 0;
+        for (OrderItem orderItem : order.getOrderItems()) {
+            Product fetchedProduct = productService.findProductById(orderItem.getProduct().getId());
+            orderItem.setProduct(fetchedProduct);
+            orderItem.setOrder(order);
+            Integer productPrice = orderItem.getProduct().getPrice();
+
+            if (productPrice == null) {
+                throw new Exception("Product price cannot be null");
+            }
+            int itemTotalPrice = productPrice * orderItem.getQuantity();
+            totalPrice += itemTotalPrice;
+        }
+        order.setTotalPrice(totalPrice);
+        return orderRepository.save(order);
     }
 
-    public List<Order> findByUserId(Long id) {
-        return orderRepository.findByUser1Id(id);
+    public void deleteOrder(Long orderId) throws Exception {
+        Order deletedOrder = orderRepository.findById(orderId)
+                .orElseThrow(() -> new Exception("Order not found"));
+        orderRepository.delete(deletedOrder);
     }
 
-    public Order save(Order order) {
-        orderRepository.save(order);
-        return order;
+    public List<Order> findAllOrders() {
+        return orderRepository.findAll();
     }
+
+    public Order findOrderById(Long orderId) throws Exception {
+        return orderRepository.findById(orderId).orElseThrow(() -> new Exception("Order not found"));
+    }
+
+    public Order findOrderByUserId(Long userId)   {
+        return orderRepository.findByUserId(userId);
+    }
+
+    public List<Order> findAllByUserId(Long userId)  {
+        return orderRepository.findAllByUserId(userId);
+    }
+
 }

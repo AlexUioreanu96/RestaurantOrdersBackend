@@ -7,44 +7,39 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
-@EnableWebSecurity
-public class SecurityConfig {
 
-    private static final String[] WHITE_LIST_URLS = {
-            "/api/auth", "/signup", "/signin", "/signout",
-            "/api/orders", "/api/orders/{username}", "/api/orders/{username}/{orderid}"
-    };
+    @EnableWebSecurity
+    public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.cors().and().csrf().disable()
-                .authorizeRequests()
-                .antMatchers("/auth/**").authenticated()
-                .antMatchers("/h2/**").permitAll()
-                .anyRequest().permitAll()
-                .and()
-                .formLogin()
-                .loginPage("/login")
-                .permitAll()
-                .and()
-                .logout()
-                .permitAll()
-                .and()
-                .csrf()
-                .ignoringAntMatchers("/h2/**")
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .and()
-                .headers()
-                .frameOptions()
-                .sameOrigin();
-        return http.build();
+
+        private static final String[] WHITE_LIST_URLS = { "/register", "/user/{userId}/update", "/user/{userId}/delete",
+                "/users", "/user/{username}", "/save-order", "/update-order/{orderId}", "/delete-order/{orderId}", "/orders", "/get-order/{orderId}", "/api/carts/{cartId}/clear"
+        };
+
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+            http
+                    .cors()
+                    .and()
+                    .csrf()
+                    .disable()
+                    .authorizeRequests()
+                    .antMatchers(WHITE_LIST_URLS)
+                    .permitAll().anyRequest().
+                    authenticated()
+                    .and()
+                    .httpBasic(Customizer.withDefaults());
+            return http.build();
+        }
+
+
+        @Bean
+        public PasswordEncoder encoder() {
+            return new BCryptPasswordEncoder();
+        }
     }
 
-    @Bean
-    public PasswordEncoder encoder() {
-        return new BCryptPasswordEncoder();
-    }
 
-}
+
+

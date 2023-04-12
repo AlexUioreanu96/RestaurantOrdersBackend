@@ -1,70 +1,47 @@
 package com.example.demo.controllers;
 
 import com.example.demo.models.Order;
-import com.example.demo.models.User;
 import com.example.demo.services.OrdersService;
-import com.example.demo.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
-@EnableAutoConfiguration
-@ComponentScan
-@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/orders")
 public class OrderController {
+
     @Autowired
-    private OrdersService ordersService;
-    @Autowired
-    private UserService userService;
+    private OrdersService orderService;
 
-    @GetMapping("/{username}")
-    public ResponseEntity<List<Order>> getOrders(@PathVariable String username) {
-        User user = userService.findByUsername(username);
-        List<Order> orders = ordersService.findByUserId(user.getId());
-        return ResponseEntity.ok(orders);
+    @GetMapping
+    public ResponseEntity<List<Order>> getAllOrders() {
+        return new ResponseEntity<>(orderService.findAllOrders(), HttpStatus.OK);
     }
 
-    @PostMapping("/{username}")
-    public ResponseEntity<?> createOrder(@RequestBody String description, @PathVariable String username) {
-        User user = userService.findByUsername(username);
-        Order order = Order.builder().user1(user).description(description).build();
-        ordersService.save(order);
-        return ResponseEntity.ok("Order created successfully");
+    @GetMapping("/{id}")
+    public ResponseEntity<Order> getOrderById(@PathVariable Long id) throws Exception {
+        return new ResponseEntity<>(orderService.findOrderById(id), HttpStatus.OK);
     }
 
-    @DeleteMapping("/{username}/{orderid}")
-    public ResponseEntity<?> deleteOrder(@PathVariable Long orderid, @PathVariable String username) {
-        User user = userService.findByUsername(username);
-        Optional<Order> orderOptional = user.getOrders().stream().filter(order -> order.getId().equals(orderid)).findFirst();
-        if (orderOptional.isPresent()) {
-            Order order = orderOptional.get();
-            user.removeOrder(order);
-            userService.save(user);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @PostMapping
+    public ResponseEntity<Order> createOrder(@RequestBody Order order) throws Exception {
+        return new ResponseEntity<>(orderService.saveOrder(order), HttpStatus.CREATED);
     }
 
-    @PutMapping("/{username}/{orderId}")
-    public ResponseEntity<Order> updateOrder(@PathVariable("orderId") Long orderId, @PathVariable String username, @RequestBody String description) {
-        User user = userService.findByUsername(username);
-        Optional<Order> orderOptional = user.getOrders().stream().filter(order -> order.getId().equals(orderId)).findFirst();
-        if (orderOptional.isPresent()) {
-            Order order = orderOptional.get();
-            order.setDescription(description);
-            Order savedOrder = ordersService.save(order);
-            return ResponseEntity.ok(savedOrder);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteOrder(@PathVariable Long id) throws Exception {
+        orderService.deleteOrder(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<Order> findOrderByUserId(@PathVariable Long userId)   {
+        return new ResponseEntity<>(orderService.findOrderByUserId(userId), HttpStatus.OK);
+    }
+    @GetMapping("/all/user/{userId}")
+    public ResponseEntity<List<Order>> findAllByUserId(@PathVariable Long userId)  {
+        return new ResponseEntity<>(orderService.findAllByUserId(userId), HttpStatus.OK);
+    }
 }
